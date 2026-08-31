@@ -1,0 +1,573 @@
+import { fileURLToPath } from 'node:url';
+import { loadEnv } from '../config/env.js';
+import { connectDb } from '../config/db.js';
+import { User } from '../models/User.js';
+import { Product } from '../models/Product.js';
+import { Pattern } from '../models/Pattern.js';
+import mongoose from 'mongoose';
+
+const products = [
+  {
+    name: 'Blush Yarn Rose Bouquet',
+    shortDescription: 'A full bouquet of yarn roses in blush and cream that never needs water.',
+    description:
+      'Hand-wrapped yarn roses on wired stems, gathered with sage leaves and a linen wrap. Each petal is shaped from cotton yarn so the bouquet keeps its volume on a table or in a vase. A lasting gift for birthdays, weddings, and studio shelves.',
+    category: 'Bouquets',
+    productType: 'Yarn Bouquet',
+    price: 68,
+    availability: 'in-stock',
+    featured: true,
+    image: '/images/yt-p03-red-rose-keychain.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Peony Yarn Bloom Bundle',
+    shortDescription: 'Soft yarn peonies with ruffled petals in warm spring colour.',
+    description:
+      'Oversized yarn peonies with layered petals and hidden floral tape. The bundle includes three stems plus filler blooms. Designed to look like a florist’s wrap, made entirely from fibre so it stays beautiful year-round.',
+    category: 'Bouquets',
+    productType: 'Yarn Bouquet',
+    price: 74,
+    availability: 'made-to-order',
+    featured: true,
+    image: '/images/yt-p24-peony-pitcher.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Wildflower Yarn Meadow Mix',
+    shortDescription: 'A loose, garden-style mix of yarn daisies, buds, and leafy stems.',
+    description:
+      'An informal meadow bouquet: yarn daisies, tiny buds, and mixed greens. Arranged so it looks freshly gathered rather than tightly packed. Perfect for a kitchen table or a studio window.',
+    category: 'Bouquets',
+    productType: 'Yarn Bouquet',
+    price: 58,
+    availability: 'in-stock',
+    featured: true,
+    image: '/images/yt-p02-mixed-keychain.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Single Stem Yarn Sunflower',
+    shortDescription: 'A cheerful yarn sunflower with a textured centre and sturdy stem.',
+    description:
+      'One statement sunflower worked in golden yarn with a dense centre disk. The stem is wired so you can bend it in a tall vase. A bright accent for desks, nurseries, and shop windows.',
+    category: 'Stems',
+    productType: 'Yarn Flower',
+    price: 24,
+    availability: 'in-stock',
+    featured: true,
+    image: '/images/yt-p09-sunflower-bouquet.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Tulip Trio',
+    shortDescription: 'Three closed tulip heads in pastel yarn, ready for a slim vase.',
+    description:
+      'A set of three yarn tulips with smooth cups and slender leaves. Colours mix blush, cream, and clay. Ships with a kraft sleeve so they can be gifted as a small posy.',
+    category: 'Stems',
+    productType: 'Yarn Flower',
+    price: 32,
+    availability: 'in-stock',
+    featured: true,
+    image: '/images/yt-p10-tulip-trio.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Lavender Yarn Bundle',
+    shortDescription: 'A dried-look bundle of yarn lavender spikes tied with twine.',
+    description:
+      'Many small yarn florets stacked on thin stems to mimic a lavender sheaf. Soft purple and sage, tied with cotton twine. Hang it, lay it on a tray, or tuck it into a basket of skeins.',
+    category: 'Bundles',
+    productType: 'Yarn Botanical',
+    price: 28,
+    availability: 'in-stock',
+    featured: true,
+    image: '/images/yt-p20-lavender.png',
+    additionalImages: [],
+  },
+  {
+    name: 'White Yarn Hydrangea Head',
+    shortDescription: 'A cloud of tiny yarn florets forming one generous hydrangea.',
+    description:
+      'Dozens of mini yarn flowers clustered into a round hydrangea head. Ivory and pale sage. Sits well in a bowl or as the focal bloom in a mixed yarn bouquet.',
+    category: 'Stems',
+    productType: 'Yarn Flower',
+    price: 36,
+    availability: 'made-to-order',
+    featured: true,
+    image: '/images/yt-p19-hydrangea.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Daisy Yarn Posy',
+    shortDescription: 'A handful of yarn daisies with sunny centres and slim green stems.',
+    description:
+      'Classic daisy faces in cream yarn with mustard centres. Light, cheerful, and easy to arrange. Includes five stems in a glass-vase-ready wrap.',
+    category: 'Bouquets',
+    productType: 'Yarn Flower',
+    price: 30,
+    availability: 'in-stock',
+    featured: true,
+    image: '/images/yt-p15-daisy-posy.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Garden Yarn Mixed Bouquet',
+    shortDescription: 'A florist-style mix of yarn blooms, filler, and trailing leaves.',
+    description:
+      'Our signature mixed bouquet: roses, filler flowers, and trailing yarn leaves. Wrapped like a market bunch. Colour story of cream, terracotta, and sage.',
+    category: 'Bouquets',
+    productType: 'Yarn Bouquet',
+    price: 82,
+    availability: 'in-stock',
+    featured: true,
+    image: '/images/yt-p17-garden-vase.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Ivory Yarn Bridal Bouquet',
+    shortDescription: 'An everlasting bridal bouquet in ivory yarn with a satin wrap.',
+    description:
+      'A keepsake bridal bouquet of ivory yarn roses and peonies. Weighted handle, hidden wires, and a removable satin ribbon. Made to photograph well and stay on a shelf after the day.',
+    category: 'Bouquets',
+    productType: 'Yarn Bouquet',
+    price: 120,
+    availability: 'made-to-order',
+    featured: true,
+    image: '/images/yt-p11-bridal-bouquet.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Flower Boutonniere',
+    shortDescription: 'A tiny yarn rose and leaf pin for jackets and gift boxes.',
+    description:
+      'A miniature yarn rose with two leaves, finished with a pin back. Matches the bridal bouquet colour story or stands alone on a wrapped present.',
+    category: 'Gifts',
+    productType: 'Yarn Flower',
+    price: 14,
+    availability: 'in-stock',
+    featured: true,
+    image: '/images/yt-p14-boutonniere.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Wreath of Blooms',
+    shortDescription: 'A door wreath wrapped in yarn flowers, buds, and leafy sprays.',
+    description:
+      'A grapevine-style base covered in yarn blooms and trailing stems. Hang it year-round; nothing wilts. Diameter about 30 cm.',
+    category: 'Home Decor',
+    productType: 'Yarn Botanical',
+    price: 64,
+    availability: 'made-to-order',
+    featured: true,
+    image: '/images/yt-p12-yarn-wreath.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Table Yarn Flower Centrepiece',
+    shortDescription: 'Low yarn flowers arranged for a dining table, no water required.',
+    description:
+      'A compact centrepiece of mixed yarn flowers in a shallow bowl shape. Designed so guests can see over it. Colours stay true under indoor light.',
+    category: 'Home Decor',
+    productType: 'Yarn Bouquet',
+    price: 70,
+    availability: 'in-stock',
+    featured: false,
+    image: '/images/yt-p13-centrepiece.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Pom-Pom Bloom Garland',
+    shortDescription: 'A string of yarn pom-pom flowers for shelves and celebrations.',
+    description:
+      'Soft pom-pom blooms spaced along cotton cord. Hang above a table or along a bookshelf. Includes extra ties so you can adjust the length.',
+    category: 'Home Decor',
+    productType: 'Yarn Botanical',
+    price: 26,
+    availability: 'in-stock',
+    featured: false,
+    image: '/images/yt-p21-garland.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Pressed-Look Yarn Flower Frame',
+    shortDescription: 'Flat yarn flowers arranged like a pressed botanic print.',
+    description:
+      'Yarn petals stitched onto a linen ground and framed. A wall piece that reads as a herbarium, made of fibre. Ready to hang.',
+    category: 'Home Decor',
+    productType: 'Yarn Art',
+    price: 48,
+    availability: 'in-stock',
+    featured: false,
+    image: '/images/yt-p18-flower-frame.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Mini Yarn Succulent Cluster',
+    shortDescription: 'Tiny yarn succulents in a ceramic-look pot for desks.',
+    description:
+      'A cluster of yarn succulents with tight spirals and dusty greens. Sits in a small pot. No watering, no fading on a sunny windowsill.',
+    category: 'Gifts',
+    productType: 'Yarn Botanical',
+    price: 22,
+    availability: 'sold-out',
+    featured: false,
+    image: '/images/yt-p16-succulent.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Coral Yarn Bouquet Keychain',
+    shortDescription: 'A peach-and-coral mini bouquet on a gold ring for bags and keys.',
+    description:
+      'Tiny yarn roses in coral and peach, finished with a white ruffled wrap and a gold key ring. A small gift that matches the studio’s larger bouquets.',
+    category: 'Gifts',
+    productType: 'Yarn Flower',
+    price: 16,
+    availability: 'in-stock',
+    featured: false,
+    image: '/images/yt-p22-coral-keychain.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Peach Carnation Yarn Bouquet',
+    shortDescription: 'Ruffled yarn carnations wrapped in blush paper for a lasting posy.',
+    description:
+      'Layered carnation-style yarn blooms in soft peach, gathered into a hand-tied bouquet. The paper wrap is florist-style; the flowers never wilt.',
+    category: 'Bouquets',
+    productType: 'Yarn Bouquet',
+    price: 56,
+    availability: 'in-stock',
+    featured: false,
+    image: '/images/yt-p23-carnation-bouquet.png',
+    additionalImages: [],
+  },
+];
+
+const patterns = [
+  {
+    name: 'Yarn Daisy Pattern',
+    shortDescription: 'A five-petal flower taught stitch-by-stitch for brand-new makers.',
+    description:
+      'Learn chain, slip stitch, and double crochet while making a cheerful flower. The pattern includes photos of each round, yarn suggestions, and ideas for turning flowers into pins, bookmarks, or bouquet stems. Written in US terms.',
+    category: 'Yarn Flowers',
+    difficulty: 'Beginner',
+    materials: 'DK cotton yarn in two colors, 3.5 mm hook, yarn needle, scissors.',
+    estimatedSkill: 'Complete beginner — no prior projects required.',
+    additionalInfo: 'Finished flower measures about 6 cm across. Includes optional leaf motif.',
+    hookSize: '3.5 mm',
+    yarnWeight: 'DK / Light worsted',
+    featured: true,
+    image: '/images/yt-pat01-daisy-pattern.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Rose Stem Pattern',
+    shortDescription: 'A wired yarn rose with layered petals and a wrapped stem.',
+    description:
+      'Shape yarn petals, stack them into a rose, then wrap a floral-wire stem. Includes petal counts, colour notes for blush and cream, and how to add two leaves. Written so you can make a single stem or a full bouquet.',
+    category: 'Yarn Flowers',
+    difficulty: 'Easy',
+    materials: 'DK cotton yarn, floral wire, tape, 3.5 mm hook or needle, scissors.',
+    estimatedSkill: 'Comfortable wrapping yarn and shaping petals.',
+    additionalInfo: 'One stem is about 25 cm tall. Scale petals for a fuller head.',
+    hookSize: '3.5 mm',
+    yarnWeight: 'DK',
+    featured: true,
+    image: '/images/yt-pat02-rose-pattern.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Granny Square Cushion Pattern',
+    shortDescription: 'The classic granny square with join-as-you-go guidance.',
+    description:
+      'Master the timeless granny square: chain spaces, clusters, and color changes. The pattern explains how to keep squares the same size, weave ends neatly, and join them into a cushion or blanket using join-as-you-go.',
+    category: 'Home',
+    difficulty: 'Beginner',
+    materials: 'Worsted acrylic or wool blend, 5.0 mm hook, tapestry needle.',
+    estimatedSkill: 'Knows chain and double crochet.',
+    additionalInfo: 'One square is 12 cm. Color recipes for a cream-and-terracotta palette included.',
+    hookSize: '5.0 mm',
+    yarnWeight: 'Worsted',
+    featured: true,
+    image: '/images/yt-pat03-granny.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Soft Yarn Baby Blanket Pattern',
+    shortDescription: 'A gentle ripple blanket with stitch counts for three sizes.',
+    description:
+      'A relaxing, repetitive ripple that is easy to memorize after the first few rows. Includes stitch multiples, border instructions, and blocking notes. Three sizes: stroller, crib, and toddler throw.',
+    category: 'Blankets',
+    difficulty: 'Easy',
+    materials: 'Soft DK baby yarn, 4.5 mm hook, stitch markers.',
+    estimatedSkill: 'Comfortable with double crochet and counting stitches.',
+    additionalInfo: 'Gauge: 16 sts × 8 rows = 10 cm in pattern. Yarn amounts listed per size.',
+    hookSize: '4.5 mm',
+    yarnWeight: 'DK',
+    featured: true,
+    image: '/images/yt-pat04-blanket.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Wreath Pattern',
+    shortDescription: 'Cover a hoop with yarn blooms, buds, and trailing leaves.',
+    description:
+      'Build a wreath base, then attach yarn flowers around one side for an asymmetric florist look. Includes spacing notes so blooms do not flatten in the post.',
+    category: 'Home',
+    difficulty: 'Intermediate',
+    materials: 'Yarn in three colours, wreath base, floral wire, glue or stitch, scissors.',
+    estimatedSkill: 'Comfortable assembling stems and shaping clusters.',
+    additionalInfo: 'Finished wreath about 30 cm. Optional ribbon hanger included.',
+    hookSize: '4.0 mm',
+    yarnWeight: 'Worsted cotton',
+    featured: true,
+    image: '/images/yt-pat05-wreath-making.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Hand-Tied Yarn Bouquet Pattern',
+    shortDescription: 'How to wrap a mixed yarn bouquet so it looks florist-made.',
+    description:
+      'Combine roses, filler, and leaves, then bind stems and wrap paper. Covers stem lengths, colour blocking, and a gift-ready finish without looking stiff.',
+    category: 'Bouquets',
+    difficulty: 'Advanced',
+    materials: 'Assorted yarn stems, kraft wrap, twine, floral tape, scissors.',
+    estimatedSkill: 'Confident combining several yarn flower types.',
+    additionalInfo: 'Makes one medium hand-tied bouquet. Colour recipe for cream and terracotta included.',
+    hookSize: '—',
+    yarnWeight: 'Mixed DK and worsted',
+    featured: true,
+    image: '/images/yt-pat06-bouquet-wrap.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Sunflower Motif Pattern',
+    shortDescription: 'A round sunflower with a dense centre disk and radiating petals.',
+    description:
+      'Work a brown centre, then add yellow petals that sit flat for appliqué or a stem. Includes counts for a 9 cm bloom and a note on wiring a single stem.',
+    category: 'Yarn Flowers',
+    difficulty: 'Easy',
+    materials: 'Worsted yarn in gold and brown, 4.0 mm hook, optional floral wire.',
+    estimatedSkill: 'Comfortable with double crochet and colour changes.',
+    additionalInfo: 'Finished bloom about 9 cm. Optional leaf included.',
+    hookSize: '4.0 mm',
+    yarnWeight: 'Worsted',
+    featured: true,
+    image: '/images/yt-pat07-sunflower-flower.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Tulip Bud Pattern',
+    shortDescription: 'A closed tulip cup with two leaves, worked in the round.',
+    description:
+      'Shape a smooth bud, add a short stem, then sew two leaves. Colour recipes for blush, cream, and clay. Written in US terms.',
+    category: 'Yarn Flowers',
+    difficulty: 'Intermediate',
+    materials: 'DK cotton yarn, 3.5 mm hook, stuffing for the cup, tapestry needle.',
+    estimatedSkill: 'Comfortable with increases and seaming.',
+    additionalInfo: 'Height about 12 cm including stem.',
+    hookSize: '3.5 mm',
+    yarnWeight: 'DK',
+    featured: true,
+    image: '/images/yt-pat08-tulip-flower.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Coaster Set Pattern',
+    shortDescription: 'Four round coasters in a dense stitch that sit flat.',
+    description:
+      'A simple circle with a tidy border. Includes blocking notes so edges do not cup, plus a cream-and-terracotta colour pair.',
+    category: 'Home',
+    difficulty: 'Beginner',
+    materials: 'Cotton worsted yarn, 4.5 mm hook, stitch marker.',
+    estimatedSkill: 'Knows single and double crochet.',
+    additionalInfo: 'Each coaster is about 11 cm across.',
+    hookSize: '4.5 mm',
+    yarnWeight: 'Worsted cotton',
+    featured: true,
+    image: '/images/yt-pat09-coasters.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Textured Yarn Cushion Pattern',
+    shortDescription: 'A square pillow cover with a raised stitch and zipper finish.',
+    description:
+      'Work a textured square, add a simple back, and insert a hidden zipper. Size notes for a 40 cm cushion insert.',
+    category: 'Home',
+    difficulty: 'Intermediate',
+    materials: 'Aran yarn, 5.0 mm hook, 40 cm zipper, cushion insert.',
+    estimatedSkill: 'Comfortable with seaming and even tension.',
+    additionalInfo: 'Cover fits a 40 × 40 cm insert.',
+    hookSize: '5.0 mm',
+    yarnWeight: 'Aran',
+    featured: true,
+    image: '/images/yt-pat10-pillow.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Sage Yarn Throw Pattern',
+    shortDescription: 'A generous throw in a relaxing, repeating stitch.',
+    description:
+      'A meditative repeat that looks the same on both sides. Includes stitch multiples and a simple border. Sized for a sofa throw.',
+    category: 'Blankets',
+    difficulty: 'Easy',
+    materials: 'Soft worsted yarn in cream and sage, 5.5 mm hook.',
+    estimatedSkill: 'Comfortable counting stitches over long rows.',
+    additionalInfo: 'Finished about 120 × 150 cm. Yarn amounts listed.',
+    hookSize: '5.5 mm',
+    yarnWeight: 'Worsted',
+    featured: true,
+    image: '/images/yt-pat11-throw-blanket.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Blush Stripe Lap Blanket Pattern',
+    shortDescription: 'A smaller blanket with gentle stripes for a chair or lap.',
+    description:
+      'Carry yarn up the side or cut between stripes. Includes a stripe sequence in dusty rose and ivory and a rounded-corner border.',
+    category: 'Blankets',
+    difficulty: 'Beginner',
+    materials: 'DK yarn in two colours, 4.5 mm hook.',
+    estimatedSkill: 'Knows double crochet and colour changes.',
+    additionalInfo: 'Finished about 80 × 100 cm.',
+    hookSize: '4.5 mm',
+    yarnWeight: 'DK',
+    featured: true,
+    image: '/images/yt-pat12-lap-blanket.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Granny Square Blanket Pattern',
+    shortDescription: 'Join granny squares into a full blanket with a tidy edge.',
+    description:
+      'Square counts for a throw, join-as-you-go, and a contrasting border. Colour recipe in cream, terracotta, and sage.',
+    category: 'Blankets',
+    difficulty: 'Easy',
+    materials: 'Worsted yarn in three colours, 5.0 mm hook, tapestry needle.',
+    estimatedSkill: 'Has made at least one granny square.',
+    additionalInfo: 'Uses 48 squares for a throw. Layout chart included.',
+    hookSize: '5.0 mm',
+    yarnWeight: 'Worsted',
+    featured: false,
+    image: '/images/yt-pat13-granny-blanket.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Mini Bouquet Keychain Pattern',
+    shortDescription: 'A tiny wrapped yarn bouquet finished with a gold ring.',
+    description:
+      'Make three mini blooms, a ruffled wrap, and attach hardware. Includes sizing so the bouquet stays small enough for keys or a bag.',
+    category: 'Bouquets',
+    difficulty: 'Easy',
+    materials: 'DK yarn in flower colours, white for the wrap, gold key ring, 2.5 mm hook.',
+    estimatedSkill: 'Comfortable with small motifs.',
+    additionalInfo: 'Finished length about 8 cm without the ring.',
+    hookSize: '2.5 mm',
+    yarnWeight: 'DK',
+    featured: false,
+    image: '/images/yt-pat14-mini-bouquet.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Bridal Yarn Bouquet Wrap Pattern',
+    shortDescription: 'How to bind an ivory yarn bouquet with a satin handle.',
+    description:
+      'Stem lengths, ribbon wrap, and how to keep the head round for photographs. Written for a keepsake bridal bouquet.',
+    category: 'Bouquets',
+    difficulty: 'Advanced',
+    materials: 'Ivory yarn stems, satin ribbon, floral tape, scissors.',
+    estimatedSkill: 'Confident assembling mixed yarn flowers.',
+    additionalInfo: 'Makes one medium bridal bouquet.',
+    hookSize: '—',
+    yarnWeight: 'Mixed DK',
+    featured: false,
+    image: '/images/yt-pat15-bridal-wrap.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Garden Posy Wrap Pattern',
+    shortDescription: 'A small mixed posy bound with twine for gifting.',
+    description:
+      'Combine daisies and filler, even the stems, and finish with a kraft sleeve. A quicker bouquet project than a full market wrap.',
+    category: 'Bouquets',
+    difficulty: 'Intermediate',
+    materials: 'Assorted small yarn stems, twine, kraft wrap.',
+    estimatedSkill: 'Has made at least two yarn flower types.',
+    additionalInfo: 'Finished posy about 20 cm tall.',
+    hookSize: '—',
+    yarnWeight: 'DK',
+    featured: false,
+    image: '/images/yt-pat16-posy-wrap.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Yarn Lily Stem Pattern',
+    shortDescription: 'A white yarn lily with a slender stem and two leaves.',
+    description:
+      'Shape a trumpet lily, add a stem, then sew leaves. Includes petal counts and a note on keeping the cup open.',
+    category: 'Yarn Flowers',
+    difficulty: 'Intermediate',
+    materials: 'DK cotton yarn in ivory and sage, 3.5 mm hook, floral wire.',
+    estimatedSkill: 'Comfortable shaping petals and wiring stems.',
+    additionalInfo: 'Finished stem about 18 cm.',
+    hookSize: '3.5 mm',
+    yarnWeight: 'DK',
+    featured: false,
+    image: '/images/yt-pat17-lily-flower.png',
+    additionalImages: [],
+  },
+  {
+    name: 'Rose Bouquet Wrap Pattern',
+    shortDescription: 'Bind a round yarn rose bouquet with a rustic ribbon.',
+    description:
+      'Even the stems, set the head, and finish with burlap or satin. Written for a medium rose-only bouquet.',
+    category: 'Bouquets',
+    difficulty: 'Easy',
+    materials: 'Yarn rose stems, ribbon, floral tape, scissors.',
+    estimatedSkill: 'Has made yarn roses already.',
+    additionalInfo: 'Makes one round bouquet about 22 cm across.',
+    hookSize: '—',
+    yarnWeight: 'DK',
+    featured: false,
+    image: '/images/yt-pat18-rose-bouquet-wrap.png',
+    additionalImages: [],
+  },
+];
+
+export { products, patterns };
+
+async function seed() {
+  const env = loadEnv();
+  await connectDb(env.mongoUri);
+
+  await Promise.all([User.deleteMany({}), Product.deleteMany({}), Pattern.deleteMany({})]);
+
+  await User.create([
+    {
+      name: env.adminName,
+      email: env.adminEmail.toLowerCase(),
+      password: env.adminPassword,
+      role: 'admin',
+    },
+    {
+      name: 'Maya Chen',
+      email: 'maya@example.com',
+      password: 'MakerPass1',
+      role: 'user',
+    },
+  ]);
+
+  await Product.insertMany(products);
+  await Pattern.insertMany(patterns);
+
+  console.log('Seed complete: admin, sample user, products, and patterns.');
+  await mongoose.disconnect();
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  seed().catch(async (error) => {
+    console.error(error);
+    await mongoose.disconnect();
+    process.exit(1);
+  });
+}
